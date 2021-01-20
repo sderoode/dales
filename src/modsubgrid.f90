@@ -124,7 +124,7 @@ contains
     integer :: ierr
 
     namelist/NAMSUBGRID/ &
-        ldelta,lmason,cf,cn,Rigc,Prandtl,lsmagorinsky,cs,nmason,ch1,lanisotrop
+        ldelta,lmason,cf,cn,Rigc,Prandtl,lsmagorinsky,cs,nmason,ch1,lanisotrop,sgs_surface_fix
 
     !cstep now there is no user control anymore on sfs_surface_fix
 
