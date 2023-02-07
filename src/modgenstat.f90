@@ -465,6 +465,7 @@ contains
                           ijtot,cu,cv,iadv_sv,iadv_kappa,eps1,dxi,dyi
     use modmpi,    only : comm3d,mpi_sum,mpierr,slabsum,D_MPI_ALLREDUCE
     use advec_kappa, only : halflev_kappa
+    use modpois,   only : p
     implicit none
 
 
@@ -488,6 +489,7 @@ contains
         wsvresl,&   ! slab averaged res w-sv(n)  flux &
         sv2avl,&
         sv2av
+
 
     real,allocatable, dimension(:) :: wqlsubl
     real,allocatable, dimension(:) :: wqlresl
@@ -584,8 +586,6 @@ contains
     allocate(thv0(2-ih:i1+ih,2-jh:j1+jh,k1))
     allocate(thvmav(k1))
     allocate(sv0h(2-ih:i1+ih,2-jh:j1+jh,k1))
-
-
 
   !-----------------------------------------------------------------------
   !     1.    INITIALISE LOCAL CONSTANTS
@@ -764,6 +764,7 @@ contains
         wsvsubl(1,n) = wsvsubl(1,n) + svflux(i,j,n)
         sv2avl(1,n)  = sv2avl(1,n) + (svm(i,j,1,n)-svmav(1,n))**2
       end do
+
     end do
     end do
 
@@ -1189,6 +1190,7 @@ contains
     deallocate(thv0)
     deallocate(thvmav)
     deallocate(sv0h)
+
   end subroutine do_genstat
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -1714,7 +1716,7 @@ contains
 
     deallocate(qlmnlast)
     deallocate(wthvtmnlast)
-
+    
   end subroutine exitgenstat
 
 
