@@ -33,8 +33,9 @@ module modbudget
   PUBLIC :: initbudget,budgetstat,exitbudget
   save
 !NetCDF variables
-  integer,parameter :: nvar = 18
+  integer,parameter :: Ntkeb  = 18
   integer,parameter :: Nmbudg = 14
+  integer,parameter :: nvar = Ntkeb + Nmbudg
   character(80),dimension(nvar,4) :: ncname
 
   integer,parameter :: iuth = 1   !< u'thv'
@@ -200,6 +201,27 @@ contains
         call ncinfo(ncname(16,:),'sbresid','Subgrid Residual = budget - storage','m/s^2','tt')
         call ncinfo(ncname(17,:),'ekm','Turbulent exchange coefficient momentum','m/s^2','tt')
         call ncinfo(ncname(18,:),'khkm   ','Kh / Km, in post-processing used to determine filter-grid ratio','m/s^2','tt')
+
+! ,'#LEV HEIGHT  |  beta*UTHV     beta*VTHV   -w2d/dzUmean  -w2d/dzVmean ' &
+!          ,'    -WDDX_P       -WDDY_P        -UDDZ_P       -VDDZ_P     -DDZ_WWU      - DDZ_WWV        WWU          WWV '&
+!          ,'    UW_RES_BEGIN    VW_RES_BEGIN           '
+
+        call ncinfo(ncname(Ntkeb+1,:),'buthv','Resolved beta*UTHV','m2/s^3','mt') 
+        call ncinfo(ncname(Ntkeb+2,:),'bvthv','Resolved beta*VTHV','m2/s^3','mt')
+        call ncinfo(ncname(Ntkeb+3,:),'Produw','Resolved -w2*dU/dz ','m2/s^3','mt')
+        call ncinfo(ncname(Ntkeb+4,:),'Prodvw','Resolved -w2*d~V/dz','m2/s^3','mt')
+        call ncinfo(ncname(Ntkeb+5,:),'mwdpdx','Resolved -wdpi/dx','m2/s^3','mt')
+        call ncinfo(ncname(Ntkeb+6,:),'mwdpdy','Resolved -wdpi/dy','m2/s^3','mt')
+        call ncinfo(ncname(Ntkeb+7,:),'mudpdz','Resolved -udpi/dz','m2/s^3','mt')
+        call ncinfo(ncname(Ntkeb+8,:),'mvdpdz','Resolved -vdpi/dz','m2/s^3','mt')
+        call ncinfo(ncname(Ntkeb+9,:),'mddzwwu','Resolved -d/dz wwu','m2/s^3','mt')
+        call ncinfo(ncname(Ntkeb+10,:),'mddzwwv','Resolved -d/dz wwv','m2/s^3','mt')
+        call ncinfo(ncname(Ntkeb+11,:),'wwu','Resolved wwu','m3/s^3','tt')
+        call ncinfo(ncname(Ntkeb+12,:),'wwv','Resolved wwv','m3/s^3','tt')
+        call ncinfo(ncname(Ntkeb+13,:),'uwrb','Resolved uw begin','m2/s^2','mt')
+        call ncinfo(ncname(Ntkeb+14,:),'vwrb','Resolved vw begin','m2/s^2','mt')
+
+       
         call define_nc( ncid_prof, NVar, ncname)
 
      end if
@@ -1005,6 +1027,7 @@ end subroutine do_genbudget
 
 
        do k=2,kmax
+          mombudg_term_mn(k,1:2) = mombudg_term_mn(k,1:2) *  grav/thvh(k)
           mombudg_term_mn(k,iddzwwuh:iddzwwvh) = -(rhobf(k) * mombudg_term_mn(k,iwwuf:iwwvf) - rhobf(k-1)*mombudg_term_mn(k-1,iwwuf:iwwvf)) / dzh(k) / rhobh(k)
                !dzh(k) = zf(k) - zf(k-1), flux divergence at half level, based on fluxes at full levels
           mombudg_term_mn(k,iwwuh) = (dzf(k)*mombudg_term_mn(k-1,iwwuf) + dzf(k-1) * mombudg_term_mn(k,iwwuf))/(2. * dzh(k))  !in final step full level results interpolated to half levels
@@ -1016,8 +1039,7 @@ end subroutine do_genbudget
        write(ifoutput,'(I3,F9.3,14E14.4)') &
             (k, &
             zh      (k), &
-            grav/thvh(k)*mombudg_term_mn  (k,1:2), & 
-            mombudg_term_mn  (k,3:14), &
+            mombudg_term_mn  (k,1:14), &
             k=1,kmax)
        close(ifoutput)
 
@@ -1041,6 +1063,9 @@ end subroutine do_genbudget
           vars(:,16) =sbresidmn
           vars(:,17) =ekmmn
           vars(:,18) =khkmmn
+
+          vars(:,Ntkeb+1:Ntkeb+Nmbudg) = mombudg_term_mn(:,1:Nmbudg)
+
           call writestat_nc(ncid_prof,nvar,ncname,vars(1:kmax,:),nrec_prof,kmax)
        end if
     endif !endif myid==0
