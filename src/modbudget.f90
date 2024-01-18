@@ -34,7 +34,7 @@ module modbudget
   save
 !NetCDF variables
   integer,parameter :: Ntkeb  = 18
-  integer,parameter :: Nmbudg = 14
+  integer,parameter :: Nmbudg = 14 + 4 !wuu , wvv, udpdx , vdpdy added
   integer,parameter :: nvar = Ntkeb + Nmbudg
   character(80),dimension(nvar,4) :: ncname
 
@@ -54,6 +54,12 @@ module modbudget
   integer,parameter :: iwwvh = iwwvf
   integer,parameter :: iuwrh = 13     !< resolved resolved uw flux at the beginning of averaging period
   integer,parameter :: ivwrh = 14   
+
+  integer,parameter :: iwuuh = 15  !< added 1 Aug 2023
+  integer,parameter :: iwvvh = 16
+  integer,parameter :: iupresxh  = 17
+  integer,parameter :: ivpresyh  = 18
+
 
   real    :: dtav, timeav
   integer(kind=longint) :: idtav, itimeav,tnext,tnextwrite
@@ -220,6 +226,11 @@ contains
         call ncinfo(ncname(Ntkeb+12,:),'wwv','Resolved wwv','m3/s^3','tt')
         call ncinfo(ncname(Ntkeb+13,:),'uwrb','Resolved uw begin','m2/s^2','mt')
         call ncinfo(ncname(Ntkeb+14,:),'vwrb','Resolved vw begin','m2/s^2','mt')
+
+        call ncinfo(ncname(Ntkeb+15,:),'wuu','Resolved wuu','m3/s^3','tt')
+        call ncinfo(ncname(Ntkeb+16,:),'wvv','Resolved wvv','m3/s^3','tt')
+        call ncinfo(ncname(Ntkeb+17,:),'mudpdx','Resolved -udpi/dx','m2/s^3','mt')
+        call ncinfo(ncname(Ntkeb+18,:),'mvdpdy','Resolved -vdpi/dy','m2/s^3','mt')
 
        
         call define_nc( ncid_prof, NVar, ncname)
@@ -659,6 +670,16 @@ contains
 
           mombudg_term_avl (k,iuwrh) = mombudg_term_avl (k,iuwrh)+(w0(i,j,k)+w0(i-1,j,k))*(u0(i,j,k-1)+u0(i,j,k))/4.   
           mombudg_term_avl (k,ivwrh) = mombudg_term_avl (k,ivwrh)+(w0(i,j,k)+w0(i-1,j,k))*(v0(i,j,k-1)+v0(i,j,k))/4.
+
+!hier volgende twee
+          mombudg_term_avl (k,iwuuh) = mombudg_term_avl (k,iwuuh)+(w0(i,j,k)+w0(i,j,k))*uh**2
+          mombudg_term_avl (k,iwvvh) = mombudg_term_avl (k,iwvvh)+(w0(i,j,k)+w0(i,j,k))*vh**2.
+
+          mombudg_term_avl (k,iupresxh) = mombudg_term_avl (k,iupresxh) - u0(i,j,k) * (p(i,j,k)-p(i-1,j,k))*dxi
+          mombudg_term_avl (k,ivpresyh) = mombudg_term_avl (k,ivpresyh) - v0(i,j,k) * (p(i,j,k)-p(i,j-1,k))*dyi
+
+
+
        enddo
        enddo
    enddo
@@ -1016,14 +1037,16 @@ end subroutine do_genbudget
             ,'#',(timeav),'--- AVERAGING TIMESTEP --- ' &
             ,nhrs,':',nminut,':',nsecs &
             ,'   HRS:MIN:SEC AFTER INITIALIZATION '
-       write (ifoutput,'(A/3A/3A)') &
+       write (ifoutput,'(A/4A/4A)') &
             '#-------------------------------------------------------------------' &
           ,'#LEV HEIGHT  |  beta*UTHV     beta*VTHV   -w2d/dzUmean  -w2d/dzVmean ' &
           ,'    -WDDX_P       -WDDY_P        -UDDZ_P       -VDDZ_P     -DDZ_WWU      - DDZ_WWV        WWU          WWV '&
           ,'    UW_RES_BEGIN    VW_RES_BEGIN           '&
+          ,'    WUU           WVV           -UDDX_P        -VDDY_P'&
           ,'#     (M)    |   ' &
           ,'(<------------------------------------------------------------- (M2/S3) -------------------------------------------------------------->' &
-          ,'<--------(M3/S3)-----------><--------(M2/S2)----------->'
+          ,'<--------(M3/S3)-----------><--------(M2/S2)----------->'&
+          ,'<--------(M3/S3)-----------><-------------- (M2/S3) --->'
 
 
        do k=2,kmax
@@ -1036,10 +1059,10 @@ end subroutine do_genbudget
           mombudg_term_mn(k,ivwrh) = vwrhb (k)  
        enddo
 
-       write(ifoutput,'(I3,F9.3,14E14.4)') &
+       write(ifoutput,'(I3,F9.3,18E14.4)') &
             (k, &
             zh      (k), &
-            mombudg_term_mn  (k,1:14), &
+            mombudg_term_mn  (k,1:18), &
             k=1,kmax)
        close(ifoutput)
 
