@@ -669,7 +669,7 @@ contains
           mombudg_term_avl (k,iwwvf) = mombudg_term_avl (k,iwwvf)  + wf*wf*vf
 
           mombudg_term_avl (k,iuwrh) = mombudg_term_avl (k,iuwrh)+(w0(i,j,k)+w0(i-1,j,k))*(u0(i,j,k-1)+u0(i,j,k))/4.   
-          mombudg_term_avl (k,ivwrh) = mombudg_term_avl (k,ivwrh)+(w0(i,j,k)+w0(i-1,j,k))*(v0(i,j,k-1)+v0(i,j,k))/4.
+          mombudg_term_avl (k,ivwrh) = mombudg_term_avl (k,ivwrh)+(w0(i,j,k)+w0(i,j-1,k))*(v0(i,j,k-1)+v0(i,j,k))/4.
 
 !hier volgende twee
           mombudg_term_avl (k,iwuuh) = mombudg_term_avl (k,iwuuh)+(w0(i,j,k)+w0(i,j,k))*uh**2
